@@ -11,22 +11,21 @@ from .base import env
 
 DEBUG = False
 
-# Hashed, manifested static files for long-term immutable caching (needs a
-# collectstatic run — the Dockerfile does this at build time).
+# Static files: WhiteNoise serves them straight from the app (no separate CDN
+# needed). Hashed + compressed for long-term caching. `build.sh` runs
+# collectstatic at deploy time to populate STATIC_ROOT + the manifest.
 STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStaticFilesStorage"  # noqa: F405
 
-# Allowed hosts + CSRF. Works out of the box on Render (RENDER_EXTERNAL_HOSTNAME)
-# and honours an explicit DJANGO_ALLOWED_HOSTS list too.
-ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
+# Accept any host (simple for a personal deploy). CSRF still needs the real
+# origin(s) for form POSTs — we trust the Render host + any *.onrender.com.
+ALLOWED_HOSTS = ["*"]
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])  # noqa: F405
 _render_host = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if _render_host:
-    ALLOWED_HOSTS.append(_render_host)
     CSRF_TRUSTED_ORIGINS.append(f"https://{_render_host}")
-if not ALLOWED_HOSTS:  # last resort so a fresh deploy still boots
-    ALLOWED_HOSTS = ["*"]
-if not CSRF_TRUSTED_ORIGINS:
-    CSRF_TRUSTED_ORIGINS = [BASE_URL]  # noqa: F405
+CSRF_TRUSTED_ORIGINS.append("https://*.onrender.com")
+if BASE_URL not in CSRF_TRUSTED_ORIGINS:  # noqa: F405
+    CSRF_TRUSTED_ORIGINS.append(BASE_URL)  # noqa: F405
 
 # Background jobs: run inline unless a real Celery broker/worker is provided.
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=True)
