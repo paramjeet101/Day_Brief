@@ -1,0 +1,192 @@
+{% extends "assistant/app.html" %}
+{% load brief_extras %}
+
+{% block title %}Today · {{ APP_NAME }}{% endblock %}
+
+{% block app %}
+<div class="page-head">
+    <div>
+        <h1 class="greeting">☀️ {{ greeting }}</h1>
+        <p class="sub">Here's your brief for today.</p>
+    </div>
+    <div class="head-actions">
+        <span class="date-pill">📅 {{ today_str }}</span>
+        <form method="post" action="{% url 'generate_now' %}" id="generate-form">
+            {% csrf_token %}
+            <button class="btn btn-primary" type="submit" id="generate-btn" data-api="/api/brief/today/">🔄 Refresh</button>
+        </form>
+    </div>
+</div>
+
+<!-- Stat cards -->
+<div class="stats">
+    <div class="stat-card">
+        <div class="stat-ico blue">🗓️</div>
+        <div><div class="stat-n">{{ stats.meetings }}</div><div class="stat-l">Meetings today</div></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-ico violet">✉️</div>
+        <div><div class="stat-n">{{ stats.emails }}</div><div class="stat-l">Emails need reply</div></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-ico amber">✅</div>
+        <div><div class="stat-n">{{ stats.follow_ups }}</div><div class="stat-l">Follow-ups</div></div>
+    </div>
+</div>
+
+<!-- Today's Schedule + Action Items -->
+<div class="panels" id="todays-brief">
+    <section class="card">
+        <div class="card-head"><h2>Today's Schedule</h2></div>
+        {% if schedule %}
+        <ul class="sched">
+            {% for s in schedule %}
+            <li>
+                <span class="t">{{ s.time|default:"—" }}</span>
+                <span class="dot"></span>
+                <div>
+                    <div class="title">{{ s.title }}</div>
+                    {% if s.loc %}<div class="loc">{{ s.loc }}</div>{% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+            <p class="empty">Nothing scheduled today — enjoy the clear runway. 🎯</p>
+        {% endif %}
+        <a href="#calendar" class="view-all">View all →</a>
+    </section>
+
+    <section class="card">
+        <div class="card-head"><h2>Action Items</h2></div>
+        {% if action_items %}
+        <ul class="actions">
+            {% for a in action_items %}
+            <li class="{{ a.priority }}">
+                <span class="bullet"></span>
+                <div>
+                    <div class="a-title">{{ a.title }}</div>
+                    {% if a.detail %}<div class="a-detail">{{ a.detail }}</div>{% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+            <p class="empty">You're all caught up. ✅</p>
+        {% endif %}
+        {% if brief %}<a href="{% url 'brief_detail' brief.id %}" class="view-all">View full brief →</a>{% endif %}
+    </section>
+</div>
+
+<!-- Calendar + Reminders + Settings -->
+<div class="panels section-gap">
+    <section class="card card-wide" id="calendar">
+        <div class="card-head">
+            <h2>🗓️ Calendar</h2>
+            <span class="chip">add an event — it shows on its date &amp; feeds your brief</span>
+        </div>
+        <form method="post" action="{% url 'add_event' %}" class="event-form">
+            {% csrf_token %}
+            <input type="text" name="title" placeholder="Event title (e.g. Dentist appointment)" required>
+            <input type="datetime-local" name="start" value="{{ today_input }}" required title="Start">
+            <input type="datetime-local" name="end" title="End (optional)">
+            <input type="text" name="location" placeholder="Location (optional)">
+            <label class="switch"><input type="checkbox" name="all_day"> All day</label>
+            <button class="btn btn-primary" type="submit">➕ Add</button>
+        </form>
+        {% if events_by_date %}
+        <div class="cal-groups">
+            {% for group in events_by_date %}
+            <div class="cal-day">
+                <div class="cal-date">{{ group.label }}</div>
+                <ul class="cal-events">
+                    {% for ev in group.items %}
+                    <li>
+                        <span class="cal-time">{{ ev.time }}</span>
+                        <span class="cal-title">{{ ev.title }}</span>
+                        {% if ev.location %}<span class="cal-loc">📍 {{ ev.location }}</span>{% endif %}
+                        <form method="post" action="{% url 'delete_event' ev.id %}" class="cal-del" onsubmit="return confirm('Remove this event?');">
+                            {% csrf_token %}
+                            <button type="submit" class="icon-btn cal-del-btn" title="Remove">✕</button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+            <p class="empty">No upcoming events yet. Add one above and it'll appear here on its date.</p>
+        {% endif %}
+    </section>
+
+    <section class="card">
+        <div class="card-head"><h2>⏰ Upcoming reminders</h2></div>
+        {% if upcoming %}
+        <ul class="timeline">
+            {% for r in upcoming %}
+            <li>
+                <span class="tl-dot"></span>
+                <div>
+                    <div class="tl-title">{{ r.event_summary }}</div>
+                    <div class="muted small">fires {{ r.fire_at|timeuntil }} before · {{ r.event_starts_at|date:"D H:i" }}</div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'reminders' %}" class="view-all">All reminders →</a>
+        {% else %}
+            <p class="empty">No upcoming reminders. New events schedule them automatically.</p>
+        {% endif %}
+    </section>
+
+    <section class="card" id="settings">
+        <div class="card-head"><h2>⚙︎ Preferences</h2></div>
+        <form method="post" action="{% url 'update_settings' %}" class="form">
+            {% csrf_token %}
+            <label>Full name
+                <input type="text" name="full_name" value="{{ account.full_name }}" placeholder="Your name">
+            </label>
+            <label>Brief time
+                <input type="time" name="brief_time" value="{{ account.brief_time }}">
+            </label>
+            <label>Timezone
+                <input type="text" name="timezone" value="{{ account.timezone }}" placeholder="e.g. Asia/Kolkata">
+            </label>
+            <label class="switch"><input type="checkbox" name="briefings_enabled" {% if account.briefings_enabled %}checked{% endif %}> Daily briefings</label>
+            <label class="switch"><input type="checkbox" name="reminders_enabled" {% if account.reminders_enabled %}checked{% endif %}> Event reminders</label>
+            <button class="btn btn-ghost" type="submit">Save preferences</button>
+        </form>
+    </section>
+
+    {% if brief %}
+    <section class="card card-wide">
+        <div class="card-head"><h2>📄 Full brief</h2><span class="chip">{{ brief.for_date }}</span></div>
+        <p class="headline">{{ brief.headline }}</p>
+        <div class="markdown">{{ brief.body_markdown|brief_markdown }}</div>
+    </section>
+    {% endif %}
+
+    <section class="card card-wide">
+        <div class="card-head"><h2>📜 Recent briefs</h2></div>
+        {% if recent_briefs %}
+        <table class="table">
+            <thead><tr><th>Date</th><th>Headline</th><th>Events</th><th>Replies</th><th></th></tr></thead>
+            <tbody>
+                {% for b in recent_briefs %}
+                <tr>
+                    <td>{{ b.for_date }}</td>
+                    <td>{{ b.headline|truncatechars:70 }}</td>
+                    <td>{{ b.event_count }}</td>
+                    <td>{{ b.reply_count }}</td>
+                    <td><a href="{% url 'brief_detail' b.id %}" class="link">view</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="empty">Your brief history will build up here.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

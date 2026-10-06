@@ -1,0 +1,78 @@
+{% extends "assistant/base.html" %}
+
+{% block content %}
+<header class="landing-top">
+    <a href="{% url 'landing' %}" class="brand"><span class="mark">☀︎</span><span class="name">{{ APP_NAME }}</span></a>
+    <div class="head-actions">
+        <button id="theme-toggle" class="icon-btn" type="button" title="Toggle theme" aria-label="Toggle theme">◐</button>
+        <a href="{% url 'signin' %}" class="btn btn-ghost">Log in</a>
+        <a href="{% url 'signup' %}" class="btn btn-primary">Sign up</a>
+    </div>
+</header>
+
+<div class="landing-wrap">
+<section class="hero">
+    <div class="hero-copy">
+        <span class="eyebrow">Your AI Chief of Staff</span>
+        <h1 class="hero-title">Start every day <span class="grad">already briefed.</span></h1>
+        <p class="hero-sub">
+            DayBrief reads your calendar and inbox each morning and hands you a sharp,
+            30-second brief — what's coming up, what needs a reply, and what not to miss.
+            It quietly schedules reminders for new events so nothing slips.
+        </p>
+        <div class="hero-cta">
+            <a href="{% url 'signup' %}" class="btn btn-primary btn-lg">🚀 Get started free</a>
+            <a href="{% url 'demo_login' %}" class="btn btn-ghost btn-lg">Try the demo</a>
+            {% if google_ready %}
+                <a href="{% url 'auth_start' %}" class="btn btn-ghost btn-lg"><span class="g-icon">G</span> Google</a>
+            {% endif %}
+        </div>
+        <p class="hint">Free account, no card. Or jump into a live demo — no signup needed.</p>
+        <ul class="trust">
+            <li>🔒 Private &amp; secure</li>
+            <li>⚡ Fast &amp; lightweight</li>
+            <li>🤖 Smart AI briefs</li>
+        </ul>
+    </div>
+
+    <div class="hero-card">
+        <div class="mock">
+            <div class="mock-head">
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                <span class="mock-title">☀︎ Today's Brief</span>
+            </div>
+            <div class="mock-body">
+                <p class="mock-headline">3 meetings, 2 emails need a reply — your afternoon is packed.</p>
+                <div class="mock-item"><span class="tag tag-high">high</span> Reply: Contract renewal — Priya (Client)</div>
+                <div class="mock-item"><span class="tag tag-event">09:00</span> Engineering Standup</div>
+                <div class="mock-item"><span class="tag tag-event">14:00</span> Q3 Roadmap Review — Boardroom</div>
+                <div class="mock-item"><span class="tag">tip</span> Block 30m before your 1:1 to prep.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <article class="feature">
+        <div class="feature-ico">🗓️</div>
+        <h3>Morning brief, on time</h3>
+        <p>Every morning at your chosen hour, a synthesized rundown of your day lands in your inbox.</p>
+    </article>
+    <article class="feature">
+        <div class="feature-ico">✉️</div>
+        <h3>Knows what needs a reply</h3>
+        <p>Scans recent unread mail and surfaces the messages that genuinely need you.</p>
+    </article>
+    <article class="feature">
+        <div class="feature-ico">⏰</div>
+        <h3>Never miss an event</h3>
+        <p>Add something to your calendar and DayBrief schedules smart reminders automatically.</p>
+    </article>
+</section>
+</div>
+
+<footer class="footer">
+    <span>{{ APP_NAME }} · {{ APP_TAGLINE }}</span>
+    <span class="muted">Stay ahead of your day.</span>
+</footer>
+{% endblock %}

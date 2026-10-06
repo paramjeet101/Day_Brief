@@ -1,0 +1,49 @@
+{% extends "assistant/app.html" %}
+
+{% block title %}Team · {{ APP_NAME }}{% endblock %}
+
+{% block app %}
+<div class="page-head">
+    <div>
+        <h1 class="greeting">👥 Team</h1>
+        <p class="sub">Manage members and their roles. Admin-only.</p>
+    </div>
+    <span class="date-pill">{{ members|length }} member{{ members|length|pluralize }}</span>
+</div>
+
+<div class="panels section-gap">
+    <section class="card card-wide">
+        <table class="table">
+            <thead>
+                <tr><th>Member</th><th>Email</th><th>Role</th><th>Briefs</th><th>Events</th><th>Joined</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for m in members %}
+                <tr>
+                    <td><strong>{{ m.display_name }}</strong></td>
+                    <td class="muted">{{ m.user.email|default:m.user.username }}</td>
+                    <td>
+                        {% if m.is_admin %}<span class="tag tag-event">Admin</span>{% else %}<span class="tag">Member</span>{% endif %}
+                    </td>
+                    <td>{{ m.n_briefs }}</td>
+                    <td>{{ m.n_events }}</td>
+                    <td class="muted small">{{ m.created_at|date:"d M Y" }}</td>
+                    <td>
+                        <form method="post" action="{% url 'set_role' m.id %}" style="margin:0;">
+                            {% csrf_token %}
+                            {% if m.role == 'admin' %}
+                                <input type="hidden" name="role" value="member">
+                                <button class="btn btn-ghost small" type="submit">Make member</button>
+                            {% else %}
+                                <input type="hidden" name="role" value="admin">
+                                <button class="btn btn-ghost small" type="submit">Make admin</button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+{% endblock %}

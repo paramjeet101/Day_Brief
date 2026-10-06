@@ -1,0 +1,36 @@
+# Render.com blueprint — free live deploy of DayBrief AI.
+# 1. Push this repo to GitHub.
+# 2. On https://render.com  ->  New  ->  Blueprint  ->  pick your repo.
+# 3. Render reads this file, builds, and gives you a free https URL.
+#    (Free web services sleep after ~15 min idle and wake on the next visit.)
+
+services:
+  - type: web
+    name: daybrief-ai
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "python manage.py migrate --noinput && gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 60"
+    healthCheckPath: /api/health/
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: DJANGO_SETTINGS_MODULE
+        value: core.settings.prod
+      - key: DJANGO_DEBUG
+        value: "False"
+      # Secrets are generated once by Render and kept stable across deploys.
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: FIELD_ENCRYPTION_KEY
+        generateValue: true
+      # AI: free local engine by default. To use free Groq instead, set
+      # LLM_PROVIDER=groq and add LLM_API_KEY in the Render dashboard.
+      - key: LLM_PROVIDER
+        value: local
+      # No Redis on the free plan → run background jobs inline.
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "True"
+      - key: SECURE_SSL_REDIRECT
+        value: "True"

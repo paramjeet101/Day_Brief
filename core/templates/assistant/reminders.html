@@ -1,0 +1,51 @@
+{% extends "assistant/app.html" %}
+
+{% block title %}Reminders · {{ APP_NAME }}{% endblock %}
+
+{% block app %}
+<div class="page-head">
+    <div>
+        <h1 class="greeting">⏰ Reminders</h1>
+        <p class="sub">Everything coming up, and what's already gone out.</p>
+    </div>
+</div>
+
+<div class="panels section-gap">
+    <section class="card card-wide">
+        <div class="card-head"><h2>Pending</h2><span class="chip">{{ pending|length }}</span></div>
+        {% if pending %}
+        <table class="table">
+            <thead><tr><th>Event</th><th>Starts</th><th>Fires</th><th>Offset</th></tr></thead>
+            <tbody>
+                {% for r in pending %}
+                <tr>
+                    <td>{{ r.event_summary }}</td>
+                    <td>{{ r.event_starts_at|date:"D d M, H:i" }}</td>
+                    <td>{{ r.fire_at|date:"D d M, H:i" }}</td>
+                    <td>T-{{ r.offset_minutes }}m</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="empty">Nothing pending. New events schedule reminders automatically.</p>
+        {% endif %}
+    </section>
+
+    <section class="card card-wide">
+        <div class="card-head"><h2>Recently sent</h2></div>
+        {% if sent %}
+        <ul class="timeline">
+            {% for r in sent %}
+            <li><span class="tl-dot tl-done"></span>
+                <div><div class="tl-title">{{ r.event_summary }}</div>
+                <div class="muted small">sent · started {{ r.event_starts_at|date:"D d M, H:i" }}</div></div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+            <p class="empty">No reminders sent yet.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

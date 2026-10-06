@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.Python
+build/
+dist/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Django
+*.log
+*.sqlite3
+daybrief.db
+db.sqlite3
+/staticfiles/
+/media/
+
+# Env & secrets
+.env
+*.pem
+client_secret*.json
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Celery
+celerybeat-schedule
+celerybeat.pid

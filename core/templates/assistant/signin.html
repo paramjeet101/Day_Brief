@@ -1,0 +1,28 @@
+{% extends "assistant/base.html" %}
+
+{% block title %}Sign in · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-card">
+        <a href="{% url 'landing' %}" class="brand auth-brand"><span class="mark">☀︎</span><span class="name">{{ APP_NAME }}</span></a>
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-sub">Sign in to see today's brief.</p>
+
+        <form method="post" action="{% url 'signin' %}" class="auth-form">
+            {% csrf_token %}
+            <label>Email
+                <input type="email" name="email" value="{{ email|default:'' }}" placeholder="you@example.com" required autofocus>
+            </label>
+            <label>Password
+                <input type="password" name="password" placeholder="Your password" required>
+            </label>
+            <button class="btn btn-primary btn-lg" type="submit">Sign in</button>
+        </form>
+
+        <p class="auth-alt">New here? <a href="{% url 'signup' %}" class="link">Create an account</a></p>
+        <div class="auth-or"><span>or</span></div>
+        <a href="{% url 'demo_login' %}" class="btn btn-ghost" style="width:100%;justify-content:center;">Try the demo (no signup)</a>
+    </div>
+</div>
+{% endblock %}

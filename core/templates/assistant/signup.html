@@ -1,0 +1,34 @@
+{% extends "assistant/base.html" %}
+
+{% block title %}Sign up · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-card">
+        <a href="{% url 'landing' %}" class="brand auth-brand"><span class="mark">☀︎</span><span class="name">{{ APP_NAME }}</span></a>
+        <h1 class="auth-title">Create your account</h1>
+        <p class="auth-sub">Start getting your daily brief in under a minute.</p>
+
+        <form method="post" action="{% url 'signup' %}" class="auth-form">
+            {% csrf_token %}
+            <label>Full name
+                <input type="text" name="full_name" value="{{ full_name|default:'' }}" placeholder="Jane Doe">
+            </label>
+            <label>Email
+                <input type="email" name="email" value="{{ email|default:'' }}" placeholder="you@example.com" required autofocus>
+            </label>
+            <label>Password
+                <input type="password" name="password" placeholder="At least 8 characters" required>
+            </label>
+            <label>Confirm password
+                <input type="password" name="confirm" placeholder="Re-enter password" required>
+            </label>
+            <button class="btn btn-primary btn-lg" type="submit">Create account</button>
+        </form>
+
+        <p class="auth-alt">Already have an account? <a href="{% url 'signin' %}" class="link">Sign in</a></p>
+        <div class="auth-or"><span>or</span></div>
+        <a href="{% url 'demo_login' %}" class="btn btn-ghost" style="width:100%;justify-content:center;">Try the demo (no signup)</a>
+    </div>
+</div>
+{% endblock %}

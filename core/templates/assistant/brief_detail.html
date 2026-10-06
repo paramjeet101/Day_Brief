@@ -1,0 +1,48 @@
+{% extends "assistant/app.html" %}
+{% load brief_extras %}
+
+{% block title %}Brief {{ brief.for_date }} · {{ APP_NAME }}{% endblock %}
+
+{% block app %}
+<div class="page-head">
+    <div>
+        <h1 class="greeting">📄 Brief · {{ brief.for_date }}</h1>
+        <p class="sub">{{ brief.headline }}</p>
+    </div>
+    <div class="head-actions">
+        {% if brief.delivered %}<span class="chip chip-ok">delivered</span>{% endif %}
+        <a href="{% url 'dashboard' %}" class="btn btn-ghost">← Dashboard</a>
+    </div>
+</div>
+
+<div class="stats">
+    <div class="stat-card"><div class="stat-ico blue">🗓️</div><div><div class="stat-n">{{ brief.event_count }}</div><div class="stat-l">Events</div></div></div>
+    <div class="stat-card"><div class="stat-ico violet">✉️</div><div><div class="stat-n">{{ brief.reply_count }}</div><div class="stat-l">Need a reply</div></div></div>
+</div>
+
+{% if brief.items_json %}
+<div class="panels section-gap">
+    <section class="card card-wide">
+        <div class="card-head"><h2>Highlights</h2></div>
+        <ul class="actions">
+            {% for item in brief.items_json %}
+            <li class="{{ item.priority }}">
+                <span class="bullet"></span>
+                <div>
+                    <div class="a-title">{{ item.title }}</div>
+                    {% if item.detail %}<div class="a-detail">{{ item.detail }}</div>{% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>
+{% endif %}
+
+<div class="panels section-gap">
+    <section class="card card-wide">
+        <div class="card-head"><h2>Full brief</h2></div>
+        <div class="markdown">{{ brief.body_markdown|brief_markdown }}</div>
+    </section>
+</div>
+{% endblock %}

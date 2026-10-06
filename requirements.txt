@@ -1,0 +1,32 @@
+# --- Core framework ---
+Django==5.2.17
+djangorestframework==3.15.2
+django-environ==0.11.2
+
+# --- Async tasks & scheduling ---
+celery==5.4.0
+django-celery-beat==2.9.0
+redis==5.2.1
+
+# --- Google Calendar + Gmail ---
+google-api-python-client==2.157.0
+google-auth==2.37.0
+google-auth-oauthlib==1.2.1
+
+# --- Anthropic Claude ---
+anthropic==0.42.0
+
+# --- Resilience & crypto ---
+tenacity==9.0.0
+cryptography==44.0.0
+
+# --- Serving / deployment ---
+gunicorn==23.0.0
+whitenoise==6.8.2
+psycopg2-binary==2.9.10   # Postgres driver (prod)
+
+# --- Dev quality-of-life ---
+django-extensions==3.2.3
+
+# --- Timezone data (Windows / slim containers lack the IANA db) ---
+tzdata==2024.2
