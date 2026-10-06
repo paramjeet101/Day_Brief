@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from assistant.models import Account
-from assistant.services import briefing
+from assistant.services import briefing, demo
 
 
 class Command(BaseCommand):
@@ -34,9 +34,11 @@ class Command(BaseCommand):
 
         account = user.account  # auto-created by signal
         account.google_email = "demo@daybrief.ai"
+        account.role = Account.Role.ADMIN
         account.timezone = "Asia/Kolkata"
         account.save()
 
+        demo.seed_calendar(account)  # real calendar records (today)
         brief, _ = briefing.build_brief(account)
         self.stdout.write(
             self.style.SUCCESS(

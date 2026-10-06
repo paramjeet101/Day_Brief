@@ -1,8 +1,11 @@
 """Brief generation orchestration.
 
-Ties the pieces together: fetch calendar + inbox (real or demo) → ask Claude to
-synthesize → persist a Brief row → (optionally) schedule reminders for any new
-events discovered along the way.
+Ties the pieces together: fetch the user's REAL calendar + inbox → synthesize a
+brief → persist a Brief row → (optionally) schedule reminders.
+
+Data policy: real data only. We never inject demo/sample/placeholder data into a
+brief. When a source isn't connected or has nothing, the brief shows an empty
+state ("No items for today.") instead of inventing anything.
 """
 
 from __future__ import annotations
@@ -15,18 +18,18 @@ from django.utils import timezone
 
 from assistant.dto import GeneratedBrief
 from assistant.models import Account, Brief
-from assistant.services import calendar_client, demo, gmail_client, llm, local_events, reminders
+from assistant.services import calendar_client, gmail_client, llm, local_events, reminders
 
 logger = logging.getLogger(__name__)
 
 
 def _gather(account: Account):
-    """Return (events, messages).
+    """Return (events, messages) — the account's REAL data only.
 
     * Connected to Google → live Calendar + Gmail.
-    * Otherwise → the user's manually-added calendar events (if any), plus a
-      demo inbox so the brief still has something to reason about. If the user
-      hasn't added anything yet, fall back entirely to demo fixtures.
+    * Otherwise → the account's own calendar entries (the Event model). There is
+      no connected mailbox, so there are no email messages. No demo data is ever
+      substituted for missing real data.
     """
     if account.is_connected:
         token = account.refresh_token
@@ -39,12 +42,8 @@ def _gather(account: Account):
         return events, messages
 
     manual = local_events.upcoming(account, within_hours=settings.BRIEF_LOOKAHEAD_HOURS)
-    if manual:
-        logger.info("Account %s using %d manual event(s).", account, len(manual))
-        return manual, demo.sample_messages()
-
-    logger.info("Account %s has no events — using demo data.", account)
-    return demo.sample_events(), demo.sample_messages()
+    logger.info("Account %s: %d real calendar event(s), no connected mailbox.", account, len(manual))
+    return manual, []
 
 
 def build_brief(account: Account, *, persist: bool = True) -> tuple[Brief, GeneratedBrief]:

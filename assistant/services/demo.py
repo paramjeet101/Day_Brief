@@ -1,15 +1,56 @@
-"""Sample data so the product is fully demoable without a connected account.
+"""Demo fixtures + seeding.
 
-Used by the dashboard and the "Generate now" action whenever an Account has no
-Google credentials attached — the whole flow (fetch → LLM → brief → reminders)
-runs end-to-end against realistic fixtures.
+IMPORTANT: this is used ONLY to seed the explicit demo account (via
+``demo_login``) with **real** calendar records so the demo isn't a blank page.
+It is never used to fabricate data inside a real user's brief — briefs read the
+account's real data only (see ``briefing._gather``).
+
+``sample_events`` / ``sample_messages`` return in-memory DTOs used by unit tests
+of the brief engine.
 """
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 
 from assistant.dto import CalendarEvent, InboxMessage
+
+
+def seed_calendar(account) -> int:
+    """Create a few *real* calendar events (today) for a demo account if it has
+    none. Returns the number created. These become genuine Event rows that the
+    brief reads like any other real data — nothing is faked at render time."""
+    from assistant.models import Event
+    from assistant.services import local_events
+
+    if account.events.exists():
+        return 0
+
+    import zoneinfo
+
+    try:
+        tz = zoneinfo.ZoneInfo(account.timezone)
+    except Exception:
+        tz = zoneinfo.ZoneInfo("UTC")
+
+    today = datetime.now(tz).date()
+
+    def at(hour: int, minute: int = 0) -> datetime:
+        return datetime.combine(today, time(hour, minute), tzinfo=tz)
+
+    specs = [
+        ("Team Standup", at(10, 0), at(10, 30), "Google Meet"),
+        ("1:1 with Manager", at(14, 0), at(14, 30), "Room 4B"),
+        ("Q3 Roadmap Review", at(16, 0), at(17, 0), "Boardroom"),
+    ]
+    created = 0
+    for title, start, end, location in specs:
+        event = Event.objects.create(
+            account=account, title=title, start=start, end=end, location=location
+        )
+        local_events.schedule_reminders(account, event)
+        created += 1
+    return created
 
 
 def sample_events() -> list[CalendarEvent]:

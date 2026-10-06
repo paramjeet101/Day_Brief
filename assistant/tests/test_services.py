@@ -18,14 +18,20 @@ from assistant.services import briefing, demo, llm, reminders
 
 
 class LLMFallbackTests(TestCase):
-    def test_fallback_brief_has_headline_items_and_sections(self):
+    def test_brief_has_summary_and_sections(self):
         headline, items, body = llm.generate_brief(
             demo.sample_events(), demo.sample_messages(), "UTC"
         )
         self.assertTrue(headline)
-        self.assertTrue(items)
-        self.assertIn("Schedule", body)
-        self.assertIn("Needs a Reply", body)
+        self.assertIn("## Summary", body)
+        self.assertIn("## Today's Schedule", body)
+        self.assertIn("## Needs Your Attention", body)
+
+    def test_empty_data_shows_empty_states_not_fake_data(self):
+        headline, items, body = llm.generate_brief([], [], "UTC")
+        self.assertIn("schedule is clear today", headline)
+        self.assertIn("No items for today.", body)
+        self.assertEqual(items, [])
 
 
 class ReminderServiceTests(TestCase):
@@ -67,9 +73,22 @@ class ReminderServiceTests(TestCase):
 
 
 class BriefingTests(TestCase):
-    def test_build_brief_demo_mode_persists(self):
+    def test_build_brief_with_no_data_is_empty_not_fake(self):
+        """A fresh account with no real data → empty brief, never demo data."""
         account = User.objects.create_user("dave", "dave@example.com", "pw").account
         brief, generated = briefing.build_brief(account)
         self.assertEqual(Brief.objects.filter(account=account).count(), 1)
-        self.assertGreater(brief.event_count, 0)
-        self.assertTrue(generated.headline)
+        self.assertEqual(brief.event_count, 0)
+        self.assertEqual(brief.reply_count, 0)
+        self.assertIn("No items for today.", brief.body_markdown)
+
+    def test_build_brief_uses_real_calendar_events(self):
+        from assistant.models import Event
+
+        account = User.objects.create_user("erin", "erin@example.com", "pw").account
+        start = timezone.now() + timedelta(hours=2)
+        Event.objects.create(account=account, title="Board Meeting", start=start, end=start + timedelta(hours=1))
+        brief, generated = briefing.build_brief(account)
+        self.assertGreaterEqual(brief.event_count, 1)
+        # The real event flows into the brief's gathered data (not demo data).
+        self.assertIn("Board Meeting", [e.summary for e in generated.events])

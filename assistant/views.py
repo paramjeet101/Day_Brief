@@ -27,7 +27,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
 from assistant.models import Account, Brief, Event, Reminder
-from assistant.services import briefing, google_auth, local_events
+from assistant.services import briefing, demo, google_auth, local_events
 
 logger = logging.getLogger(__name__)
 
@@ -208,7 +208,9 @@ def demo_login(request: HttpRequest) -> HttpResponse:
 
     login(request, user)
 
-    # Make the dashboard land fully populated: generate today's brief if missing.
+    # Seed the demo account with REAL calendar records (once), then build today's
+    # brief so the dashboard lands populated with genuine data — not fake values.
+    demo.seed_calendar(account)
     today = timezone.localdate().isoformat()
     if not Brief.objects.filter(account=account, for_date=today).exists():
         try:
@@ -252,6 +254,11 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     now_local = timezone.localtime(timezone=tz)
     pending_count = Reminder.objects.filter(account=account, status=Reminder.Status.PENDING).count()
 
+    # Counts derived strictly from the brief's real items.
+    brief_items = (brief.items_json if brief else []) or []
+    meetings_today = sum(1 for it in brief_items if it.get("kind") == "event")
+    emails_to_reply = sum(1 for it in brief_items if it.get("kind") == "reply")
+
     return render(
         request,
         "assistant/dashboard.html",
@@ -268,8 +275,8 @@ def dashboard(request: HttpRequest) -> HttpResponse:
             "schedule": schedule,
             "action_items": action_items,
             "stats": {
-                "meetings": brief.event_count if brief else 0,
-                "emails": brief.reply_count if brief else 0,
+                "meetings": meetings_today,
+                "emails": emails_to_reply,
                 "follow_ups": pending_count,
             },
         },
